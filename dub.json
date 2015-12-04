@@ -1,0 +1,9 @@
+{
+    "name": "ithoxd-cassandra",
+    "description": "DataStax D Driver for Apache Cassandra.",
+    "copyright": "Copyright © 2015, developer",
+    "authors": [ "donglei" ],
+    "libs": [ "cassandra"],
+	"dependencies": {
+	}
+}
