@@ -9,19 +9,20 @@ void testcassandra()
 {
 	import ithox.cassandra;
 	import std.string;
+	cass_log_set_level(CassLogLevel.CASS_LOG_ERROR);
 	CassCluster* cluster = cass_cluster_new();
 	CassSession* session = cass_session_new();
 	cass_cluster_set_protocol_version( cluster,2);
-	cass_cluster_set_connection_heartbeat_interval(cluster,60);
-	cass_cluster_set_contact_points(cluster, "127.0.0.1");
+	//cass_cluster_set_connection_heartbeat_interval(cluster,60);
+	cass_cluster_set_contact_points(cluster, "10.1.12.64,10.1.11.31");
 
 	CassFuture* connect_future = cass_session_connect(session, cluster);
 
 	CassError rc = cass_future_error_code(connect_future);
 	if(rc == CassError.CASS_OK)
-	{
+	{ca
 		CassFuture* close_future = null;
-		CassStatement* statement = cass_statement_new("SELECT *  FROM system.schema_keyspaces", 0);
+		CassStatement* statement = cass_statement_new("SELECT *  FROM mykeyspace64.users ", 0);
 		CassFuture* result_future = cass_session_execute(session, statement);
 		if(cass_future_error_code(result_future) == CassError.CASS_OK)
 		{
@@ -30,11 +31,18 @@ void testcassandra()
 			while(cass_iterator_next(rows))
 			{
 				const CassRow* row = cass_iterator_get_row(rows);
-				const CassValue* value = cass_row_get_column_by_name(row, "keyspace_name");
+				const CassValue* value = cass_row_get_column_by_name(row, "fname");
 				const char* keyspace;
 				size_t keyspace_length;
 				cass_value_get_string(value, &keyspace, &keyspace_length);
-				writeln("keyspace---",cast(string)(keyspace[0 .. keyspace_length]));
+				writeln("fname---",cast(string)(keyspace[0 .. keyspace_length]));
+
+
+				const CassValue* user_id = cass_row_get_column_by_name(row, "user_id");
+				cass_int32_t op;
+				cass_value_get_int32(user_id, &op);
+				writeln("userid---",op);
+
 			}
 			cass_result_free(result);
 			cass_iterator_free(rows);
