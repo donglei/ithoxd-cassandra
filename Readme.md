@@ -5,7 +5,7 @@
 
 ## examples
 
------
+```
 void testcassandraobj()
 {
 	CassandraClient client = new CassandraClient("10.1.11.14");
@@ -24,4 +24,4 @@ void testcassandraobj()
 	}
 
 }
------
+```
