@@ -50,18 +50,18 @@ class CassandraResultSet
 	///执行
 	private void execute()
 	{
-		CassError rc = CassError.CASS_OK;
-		CassFuture* future;
-		CassStatement* statement = cass_statement_new(this.sql.ptr, 0);
-
-		future = cass_session_execute(this.keyspace.client.getSession(), statement);
+		import std.string;
+		CassStatement* statement = cass_statement_new(this.sql.toStringz, 0);
+		auto future = cass_session_execute(this.keyspace.client.getSession(), statement);
+		
 		cass_future_wait(future);
-		rc = cass_future_error_code(future);
+		auto rc = cass_future_error_code(future);
 
 		if (rc != CassError.CASS_OK) 
 		{
 			this.runSuccess = false;
-			printError(future);
+			std.stdio.writeln(this.sql);
+			printError(future, __LINE__);
 		}
 		else
 		{
@@ -158,9 +158,11 @@ class CassandraResultSet
 		import std.conv;
 		cass_iterator_next(this.iterator);
 		const CassRow* row = cass_iterator_get_row(this.iterator);
+		string[] tmpRow;
 		foreach(int index, string cname; this._columns)
 		{
-			const CassValue* value = cass_row_get_column_by_name(row, cname.ptr);
+			import std.string;
+			const CassValue* value = cass_row_get_column_by_name(row, cname.toStringz);
 			switch(this._columnsType[index])
 			{
 				case CassValueType.CASS_VALUE_TYPE_INT:
@@ -168,18 +170,18 @@ class CassandraResultSet
 				case CassValueType.CASS_VALUE_TYPE_SMALL_INT:
 					cass_int32_t op;
 					cass_value_get_int32(value, &op);
-					stringRow.row ~= to!string(op);
+					tmpRow ~= to!string(op);
 					break;
 				case CassValueType.CASS_VALUE_TYPE_BIGINT:
 					cass_int64_t op;
 					cass_value_get_int64(value, &op);
-					stringRow.row ~= to!string(op);
+					tmpRow ~= to!string(op);
 					break;
 				case CassValueType.CASS_VALUE_TYPE_VARCHAR:
 					const char* var;
 					size_t len;
 					cass_value_get_string(value, &var, &len);
-					stringRow.row ~= cast(string)(var[0 .. len]);
+					tmpRow ~= cast(string)(var[0 .. len]);
 
 					break;
 
@@ -187,7 +189,7 @@ class CassandraResultSet
 					throw new Exception(format("CassValueType is not deal:%s", this._columnsType[index]), __FILE__, __LINE__);
 			}
 		}
-
+		this.stringRow.row = tmpRow;
 		this.stringRow.columnNames = this._columns;
 	}
 
@@ -341,8 +343,8 @@ class CassandraClient{
 		cluster = cass_cluster_new();
 
 		cass_cluster_set_protocol_version( cluster,protocol_version);
-
-		cass_cluster_set_contact_points(cluster, hosts.ptr);
+		import std.string;
+		cass_cluster_set_contact_points(cluster, hosts.toStringz);
 		if(this.port != int.init)
 		{
 			cass_cluster_set_port(cluster, port);
@@ -361,7 +363,7 @@ class CassandraClient{
 		//	cass_future_wait(future);
 		rc = cass_future_error_code(future);
 		if (rc != CassError.CASS_OK) {
-			printError(future);
+			printError(future, __LINE__);
 		}
 		cass_future_free(future);
 		return rc;
@@ -377,14 +379,15 @@ class CassandraClient{
 	{
 		CassError rc = CassError.CASS_OK;
 		CassFuture* future;
-		CassStatement* statement = cass_statement_new(query.ptr, 0);
+		import std.string;
+		CassStatement* statement = cass_statement_new(query.toStringz, 0);
 
 		future = cass_session_execute(session, statement);
 		cass_future_wait(future);
 
 		rc = cass_future_error_code(future);
 		if (rc != CassError.CASS_OK) {
-			printError(future);
+			printError(future, __LINE__);
 		}
 
 		cass_future_free(future);
@@ -421,10 +424,11 @@ class CassandraClient{
 
 }
 
-void printError(CassFuture* future) 
+void printError(CassFuture* future, int line) 
 {
 	const char* message;
 	size_t message_length;
 	cass_future_error_message(future, &message, &message_length);
-	throw new Exception("error message: " ~ cast(string)(message[0 .. message_length]));
+	import std.conv;
+	throw new Exception("error message: " ~ cast(string)(message[0 .. message_length]) ~ " line:"~ to!string(line));
 }
