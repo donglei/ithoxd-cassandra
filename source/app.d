@@ -14,7 +14,7 @@ import std.format;
 
 void testcassandrainsert()
 {
-	CassandraClient client = new CassandraClient("10.1.12.240");
+	CassandraClient client = new CassandraClient("10.1.12.240,10.1.12.241");
 	client.setLogLevel(CassLogLevel.CASS_LOG_ERROR);
 	//client.createKeyspace("donglei");
 	auto ks = client.getKeyspace("donglei");
@@ -22,8 +22,8 @@ void testcassandrainsert()
 	for(auto i=0; i< 10000;i++)
 	{
 		
-		//string sql = format("insert into users (id) values(%s)", i+6000);
-		string sql = format("select * from users where id=%s;", i+6000 );
+		string sql = format("insert into users (id) values(%s)", i+6000);
+		//string sql = format("select * from users where id=%s;", i+6000 );
 		auto result = ks.query(sql);
 		///sql 执行成功
 		if(result.isSuccess)
